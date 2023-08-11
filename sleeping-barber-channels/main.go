@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -34,5 +35,36 @@ func main() {
 	}
 
 	color.Green("The shop is open for the day!")
+	shop.AddBarber("Frank")
+	shop.AddBarber("Petros")
+	shop.AddBarber("Nick")
+	shop.AddBarber("Katia")
+	shop.AddBarber("Maria")
 
+	shopClosing := make(chan bool)
+	closed := make(chan bool)
+
+	go func() {
+		<-time.After(timeOpen)
+		shopClosing <- true
+		shop.CloseShopForTheDay()
+		closed <- true
+	}()
+
+	i := 1
+
+	go func() {
+		for {
+			randomMiliseconds := rand.Int() % (2 * arrivalRate)
+			select {
+			case <-shopClosing:
+				return
+			case <-time.After(time.Millisecond * time.Duration(randomMiliseconds)):
+				shop.AddClient(fmt.Sprintf("Client #%d", i))
+				i++
+			}
+		}
+	}()
+
+	<-closed
 }
